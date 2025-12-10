@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Milk Delivery Invoice</title>
+  <style>
+    :root{--accent:#0b6efd;--muted:#666}
+    body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial; margin:0; padding:20px; background:#f5f7fb}
+    .container{max-width:900px; margin:0 auto}
+
+    /* Controls */
+    .controls{display:grid;grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:18px}
+    label{font-size:13px; color:var(--muted); margin-bottom:6px; display:block}
+    input, textarea{width:100%; padding:8px 10px; border:1px solid #d1d7e0; border-radius:6px; font-size:14px}
+
+    button{background:var(--accent); color:white; border:none; padding:10px 14px; border-radius:8px; cursor:pointer}
+    button:hover{background:#0a58ca}
+    button.secondary{background:#333}
+    button.secondary:hover{background:#111}
+    .button-group{display:flex; align-items:end; gap:8px; grid-column:3/4; justify-content:flex-end}
+
+    /* Invoice */
+    .invoice{background:white; padding:22px; border-radius:10px; box-shadow:0 6px 18px rgba(20,30,50,0.06)}
+    .invoice header{display:flex; justify-content:space-between; align-items:center}
+    .brand{font-weight:700; font-size:20px}
+    .muted{color:var(--muted); font-size:13px}
+    .section{margin-top:18px}
+
+    table{width:100%; border-collapse:collapse; margin-top:10px}
+    th, td{padding:8px 10px; border:1px solid #e6e9f0; text-align:center}
+    th{background:#fafbff; font-weight:600}
+
+    .totals{display:flex; justify-content:flex-end; margin-top:12px}
+    .totals .box{width:300px}
+    .totals .box div{display:flex; justify-content:space-between; padding:6px 8px}
+    .totals .box .grand{font-weight:700; font-size:16px; border-top:1px solid #e6e9f0; padding-top:10px}
+
+    @media print{
+      body{background:white}
+      .controls, button{display:none}
+      .container{max-width:100%; margin:0}
+      .invoice{box-shadow:none; border-radius:0; padding:0}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- Controls -->
+    <div class="controls">
+
+      <div>
+        <label>Customer / Company Name</label>
+        <input id="companyName" value="Kwik Lock – Milk Delivery" />
+      </div>
+
+      <div>
+        <label>Pending Amount (€)</label>
+        <input id="pendingAmount" value="285.00" type="number" step="0.01" />
+      </div>
+
+      <div>
+        <label>Invoice Date</label>
+        <input id="invoiceDate" type="date" />
+      </div>
+
+      <div>
+        <label>Period Start</label>
+        <input id="periodStart" type="date" />
+      </div>
+
+      <div>
+        <label>Period End</label>
+        <input id="periodEnd" type="date" />
+      </div>
+
+      <div>
+        <label>Milk (€) per week</label>
+        <input id="milkPrice" value="27.00" type="number" step="0.01" />
+      </div>
+
+      <div>
+        <label>Delivery (€) per week</label>
+        <input id="deliveryPrice" value="1.50" type="number" step="0.01" />
+      </div>
+
+      <div style="grid-column:1/4">
+        <label>Bank Details</label>
+        <textarea id="bankDetails">AIB Bank
+IBAN: IE21 AIBK 9353 8757 0460 95
+BIC: AIBKIE2D
+Account Holder: MUHAMMAD TAYYAB YAQUB
+Registration No: 2029691TA</textarea>
+      </div>
+
+      <div class="button-group">
+        <button id="generateBtn">Generate</button>
+        <button id="printBtn" class="secondary">Print / Save PDF</button>
+        <button id="downloadHtml" class="secondary">Download HTML</button>
+      </div>
+    </div>
+
+    <!-- Invoice Area -->
+    <div id="invoiceArea" class="invoice"></div>
+
+  </div>
+
+<script>
+function formatCurrency(n){ return Number(n||0).toFixed(2); }
+function escapeHtml(str){ return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function generateWeeks(startIso, endIso){
+  const weeks = [];
+  if(!startIso || !endIso) return weeks;
+  const start = new Date(startIso);
+  const end = new Date(endIso);
+  if(isNaN(start) || isNaN(end) || start > end) return weeks;
+  let current = new Date(start);
+  while(current <= end){
+    weeks.push(current.toISOString().split('T')[0]);
+    current.setDate(current.getDate()+7);
+  }
+  return weeks;
+}
+
+function renderInvoice(){
+  const customer = document.getElementById('companyName').value || 'Customer';
+  const pending = parseFloat(document.getElementById('pendingAmount').value || 0);
+  const start = document.getElementById('periodStart').value;
+  const end = document.getElementById('periodEnd').value;
+  const milk = parseFloat(document.getElementById('milkPrice').value || 0);
+  const delivery = parseFloat(document.getElementById('deliveryPrice').value || 0);
+  const invoiceDate = document.getElementById('invoiceDate').value || new Date().toISOString().split('T')[0];
+
+  const weeks = generateWeeks(start, end);
+  const weeklyTotal = milk + delivery;
+  let periodTotal = 0;
+
+  let html = `
+    <header>
+      <div>
+        <div class="brand">${escapeHtml(customer)}</div>
+        <div class="muted">Milk Delivery Invoice</div>
+      </div>
+      <div style="text-align:right">
+        <div class="muted">Date: ${escapeHtml(invoiceDate)}</div>
+      </div>
+    </header>
+
+    <div class="section">
+      <strong>Weekly Delivery Summary</strong>
+      <div class="muted">Period: ${escapeHtml(start || 'N/A')} → ${escapeHtml(end || 'N/A')}</div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Week #</th>
+          <th>Week Start</th>
+          <th>Milk (€)</th>
+          <th>Delivery (€)</th>
+          <th>Total (€)</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  if(weeks.length){
+    weeks.forEach((w,i)=>{
+      const rowTotal = weeklyTotal;
+      periodTotal += rowTotal;
+      html += `
+        <tr>
+          <td>${i+1}</td>
+          <td>${escapeHtml(w)}</td>
+          <td>${formatCurrency(milk)}</td>
+          <td>${formatCurrency(delivery)}</td>
+          <td>${formatCurrency(rowTotal)}</td>
+        </tr>`;
+    });
+  } else {
+    html += `<tr><td colspan="5" class="muted" style="text-align:center">Select valid start and end dates.</td></tr>`;
+  }
+
+  // Totals box now includes Pending, Period Total, and Grand Total (Pending + Period)
+  const grand = (Number(pending || 0) + Number(periodTotal || 0));
+  html += `
+      </tbody>
+    </table>
+
+    <div class="totals">
+      <div class="box">
+        <div><div class="muted">Pending Amount (previous balance):</div><div>€${formatCurrency(pending)}</div></div>
+        <div><div class="muted">This Period Total (${weeks.length} weeks × €${formatCurrency(weeklyTotal)}):</div><div>€${formatCurrency(periodTotal)}</div></div>
+        <div class="grand"><div>Grand Total Due:</div><div>€${formatCurrency(grand)}</div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <strong>Please Pay Bill To:</strong>
+    </div>
+    <div style="white-space:pre-line; margin-top:5px;">
+      ${escapeHtml(document.getElementById('bankDetails').value)}
+    </div>
+  `;
+
+  document.getElementById('invoiceArea').innerHTML = html;
+}
+
+document.getElementById('generateBtn').onclick = function(e){ e && e.preventDefault(); renderInvoice(); };
+document.getElementById('printBtn').onclick = function(e){ e && e.preventDefault(); renderInvoice(); window.print(); };
+
+document.getElementById('downloadHtml').onclick = function(){
+  const blob = new Blob([document.documentElement.outerHTML],{type:'text/html'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'invoice.html';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+};
+
+window.addEventListener('DOMContentLoaded', ()=>{
+  const today = new Date();
+  const fourWeeksAgo = new Date();
+  fourWeeksAgo.setDate(today.getDate()-28);
+  const iso = d => d.toISOString().split('T')[0];
+
+  document.getElementById('invoiceDate').value = iso(today);
+  document.getElementById('periodStart').value = iso(fourWeeksAgo);
+  document.getElementById('periodEnd').value = iso(today);
+
+  renderInvoice();
+});
+</script>
+
+</body>
+</html>
