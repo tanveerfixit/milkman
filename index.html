@@ -4,106 +4,120 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Milk Delivery Invoice</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root{--accent:#0b6efd;--muted:#666}
-    body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial; margin:0; padding:20px; background:#f5f7fb}
-    .container{max-width:900px; margin:0 auto}
-
-    /* Controls */
-    .controls{display:grid;grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:18px}
-    label{font-size:13px; color:var(--muted); margin-bottom:6px; display:block}
-    input, textarea{width:100%; padding:8px 10px; border:1px solid #d1d7e0; border-radius:6px; font-size:14px}
-
-    button{background:var(--accent); color:white; border:none; padding:10px 14px; border-radius:8px; cursor:pointer}
-    button:hover{background:#0a58ca}
-    button.secondary{background:#333}
-    button.secondary:hover{background:#111}
-    .button-group{display:flex; align-items:end; gap:8px; grid-column:3/4; justify-content:flex-end}
-
-    /* Invoice */
-    .invoice{background:white; padding:22px; border-radius:10px; box-shadow:0 6px 18px rgba(20,30,50,0.06)}
-    .invoice header{display:flex; justify-content:space-between; align-items:center}
-    .brand{font-weight:700; font-size:20px}
-    .muted{color:var(--muted); font-size:13px}
-    .section{margin-top:18px}
-
-    table{width:100%; border-collapse:collapse; margin-top:10px}
-    th, td{padding:8px 10px; border:1px solid #e6e9f0; text-align:center}
-    th{background:#fafbff; font-weight:600}
-
-    .totals{display:flex; justify-content:flex-end; margin-top:12px}
-    .totals .box{width:300px}
-    .totals .box div{display:flex; justify-content:space-between; padding:6px 8px}
-    .totals .box .grand{font-weight:700; font-size:16px; border-top:1px solid #e6e9f0; padding-top:10px}
-
+    
+    /* Print styles - MUST NOT CHANGE */
     @media print{
-      body{background:white}
-      .controls, button{display:none}
-      .container{max-width:100%; margin:0}
-      .invoice{box-shadow:none; border-radius:0; padding:0}
+      body{background:white; padding:0 !important}
+      .controls, button, .print-hide{display:none !important}
+      .container{max-width:100% !important; margin:0 !important}
+      .invoice{box-shadow:none !important; border-radius:0 !important; padding:0 !important; margin:0 !important}
+      .invoice-header{margin-bottom:12px !important}
+      .invoice-section{margin-top:12px !important}
+      .invoice-totals{margin-top:10px !important}
+      .invoice-bank{margin-top:12px !important}
     }
+    
+    /* Invoice table styles for PDF output */
+    .invoice table{width:100%; border-collapse:collapse}
+    .invoice th, .invoice td{padding:6px 8px; border:1px solid #e6e9f0; text-align:center; font-size:14px}
+    .invoice th{background:#fafbff; font-weight:600}
+    
+    .invoice .totals .box{width:280px}
+    .invoice .totals .box div{display:flex; justify-content:space-between; padding:4px 6px}
+    .invoice .totals .box .grand{font-weight:600; font-size:15px; border-top:1px solid #e6e9f0; padding-top:8px}
+    
+    /* Brand styles */
+    .brand{font-weight:600; font-size:18px}
+    .muted{color:var(--muted); font-size:13px}
+    
+    /* Clean minimal styles for screen */
+    .invoice-screen{font-family:system-ui, -apple-system, sans-serif}
   </style>
 </head>
-<body>
-  <div class="container">
-
-    <!-- Controls -->
-    <div class="controls">
-
-      <div>
-        <label>Customer / Company Name</label>
-        <input id="companyName" value="Kwik Lock – Milk Delivery" />
+<body class="bg-gray-50 p-4 font-sans">
+  <div class="max-w-4xl mx-auto">
+    
+    <!-- Controls Section -->
+    <div class="print-hide bg-white rounded-lg shadow-sm p-4 mb-6 border border-gray-100">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+        <!-- Customer Info -->
+        <div class="space-y-1">
+          <label class="block text-xs font-medium text-gray-600">Customer / Company</label>
+          <input id="companyName" value="" 
+                 class="w-full px-3 py-2 border border-gray-200 rounded focus:ring-1 focus:ring-blue-400 focus:border-blue-400 text-sm">
+        </div>
+        
+        <!-- Pending Amount -->
+        <div class="space-y-1">
+          <label class="block text-xs font-medium text-gray-600">Pending Amount (€)</label>
+          <input id="pendingAmount" value="285.00" type="number" step="0.01"
+                 class="w-full px-3 py-2 border border-gray-200 rounded focus:ring-1 focus:ring-blue-400 focus:border-blue-400 text-sm">
+        </div>
+        
+        <!-- Invoice Date -->
+        <div class="space-y-1">
+          <label class="block text-xs font-medium text-gray-600">Invoice Date</label>
+          <input id="invoiceDate" type="date"
+                 class="w-full px-3 py-2 border border-gray-200 rounded focus:ring-1 focus:ring-blue-400 focus:border-blue-400 text-sm">
+        </div>
+        
+        <!-- Period Start -->
+        <div class="space-y-1">
+          <label class="block text-xs font-medium text-gray-600">Period Start</label>
+          <input id="periodStart" type="date"
+                 class="w-full px-3 py-2 border border-gray-200 rounded focus:ring-1 focus:ring-blue-400 focus:border-blue-400 text-sm">
+        </div>
+        
+        <!-- Period End -->
+        <div class="space-y-1">
+          <label class="block text-xs font-medium text-gray-600">Period End</label>
+          <input id="periodEnd" type="date"
+                 class="w-full px-3 py-2 border border-gray-200 rounded focus:ring-1 focus:ring-blue-400 focus:border-blue-400 text-sm">
+        </div>
+        
+        <!-- Milk Price -->
+        <div class="space-y-1">
+          <label class="block text-xs font-medium text-gray-600">Milk (€) per week</label>
+          <input id="milkPrice" value="27.00" type="number" step="0.01"
+                 class="w-full px-3 py-2 border border-gray-200 rounded focus:ring-1 focus:ring-blue-400 focus:border-blue-400 text-sm">
+        </div>
+        
+        <!-- Delivery Price -->
+        <div class="space-y-1">
+          <label class="block text-xs font-medium text-gray-600">Delivery (€) per week</label>
+          <input id="deliveryPrice" value="1.50" type="number" step="0.01"
+                 class="w-full px-3 py-2 border border-gray-200 rounded focus:ring-1 focus:ring-blue-400 focus:border-blue-400 text-sm">
+        </div>
       </div>
-
-      <div>
-        <label>Pending Amount (€)</label>
-        <input id="pendingAmount" value="285.00" type="number" step="0.01" />
+      
+      <!-- Bank Details -->
+      <div class="mb-4">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Bank Details</label>
+        <textarea id="bankDetails" rows="3"
+                  class="w-full px-3 py-2 border border-gray-200 rounded focus:ring-1 focus:ring-blue-400 focus:border-blue-400 text-sm"></textarea>
       </div>
-
-      <div>
-        <label>Invoice Date</label>
-        <input id="invoiceDate" type="date" />
-      </div>
-
-      <div>
-        <label>Period Start</label>
-        <input id="periodStart" type="date" />
-      </div>
-
-      <div>
-        <label>Period End</label>
-        <input id="periodEnd" type="date" />
-      </div>
-
-      <div>
-        <label>Milk (€) per week</label>
-        <input id="milkPrice" value="27.00" type="number" step="0.01" />
-      </div>
-
-      <div>
-        <label>Delivery (€) per week</label>
-        <input id="deliveryPrice" value="1.50" type="number" step="0.01" />
-      </div>
-
-      <div style="grid-column:1/4">
-        <label>Bank Details</label>
-        <textarea id="bankDetails">AIB Bank
-IBAN: IE21 AIBK 9353 8757 0460 95
-BIC: AIBKIE2D
-Account Holder: MUHAMMAD TAYYAB YAQUB
-Registration No: 2029691TA</textarea>
-      </div>
-
-      <div class="button-group">
-        <button id="generateBtn">Generate</button>
-        <button id="printBtn" class="secondary">Print / Save PDF</button>
-        <button id="downloadHtml" class="secondary">Download HTML</button>
+      
+      <!-- Action Buttons -->
+      <div class="flex flex-wrap gap-2 justify-end">
+        <button id="generateBtn" class="px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded hover:bg-blue-600 focus:ring-1 focus:ring-blue-400">
+          Update Invoice
+        </button>
+        <button id="printBtn" class="px-4 py-2 bg-gray-700 text-white text-sm font-medium rounded hover:bg-gray-800 focus:ring-1 focus:ring-gray-500">
+          Print / Save PDF
+        </button>
+        <button id="downloadHtml" class="px-4 py-2 bg-gray-500 text-white text-sm font-medium rounded hover:bg-gray-600 focus:ring-1 focus:ring-gray-400">
+          Download HTML
+        </button>
       </div>
     </div>
-
-    <!-- Invoice Area -->
-    <div id="invoiceArea" class="invoice"></div>
-
+    
+    <!-- Invoice Preview Area -->
+    <div id="invoiceArea" class="invoice invoice-screen bg-white rounded shadow-sm p-6"></div>
+    
   </div>
 
 <script>
@@ -138,22 +152,22 @@ function renderInvoice(){
   let periodTotal = 0;
 
   let html = `
-    <header>
+    <header class="invoice-header flex justify-between items-start">
       <div>
-        <div class="brand">${escapeHtml(customer)}</div>
-        <div class="muted">Milk Delivery Invoice</div>
+        <div class="brand text-gray-800">${escapeHtml(customer)}</div>
+        <div class="muted mt-1">Milk Delivery Invoice</div>
       </div>
-      <div style="text-align:right">
+      <div class="text-right">
         <div class="muted">Date: ${escapeHtml(invoiceDate)}</div>
       </div>
     </header>
 
-    <div class="section">
-      <strong>Weekly Delivery Summary</strong>
+    <div class="invoice-section">
+      <div class="text-gray-700 mb-1">Weekly Delivery Summary</div>
       <div class="muted">Period: ${escapeHtml(start || 'N/A')} → ${escapeHtml(end || 'N/A')}</div>
     </div>
 
-    <table>
+    <table class="mt-3">
       <thead>
         <tr>
           <th>Week #</th>
@@ -171,7 +185,7 @@ function renderInvoice(){
       const rowTotal = weeklyTotal;
       periodTotal += rowTotal;
       html += `
-        <tr>
+        <tr class="${i % 2 === 0 ? '' : 'bg-gray-50'}">
           <td>${i+1}</td>
           <td>${escapeHtml(w)}</td>
           <td>${formatCurrency(milk)}</td>
@@ -183,43 +197,57 @@ function renderInvoice(){
     html += `<tr><td colspan="5" class="muted" style="text-align:center">Select valid start and end dates.</td></tr>`;
   }
 
-  // Totals box now includes Pending, Period Total, and Grand Total (Pending + Period)
   const grand = (Number(pending || 0) + Number(periodTotal || 0));
   html += `
       </tbody>
     </table>
 
-    <div class="totals">
-      <div class="box">
-        <div><div class="muted">Pending Amount (previous balance):</div><div>€${formatCurrency(pending)}</div></div>
-        <div><div class="muted">This Period Total (${weeks.length} weeks × €${formatCurrency(weeklyTotal)}):</div><div>€${formatCurrency(periodTotal)}</div></div>
-        <div class="grand"><div>Grand Total Due:</div><div>€${formatCurrency(grand)}</div></div>
+    <div class="invoice-totals flex justify-end">
+      <div class="totals">
+        <div class="box bg-gray-50 rounded p-2">
+          <div><div class="muted">Pending Amount:</div><div>€${formatCurrency(pending)}</div></div>
+          <div><div class="muted">This Period (${weeks.length} weeks):</div><div>€${formatCurrency(periodTotal)}</div></div>
+          <div class="grand text-gray-800"><div>Grand Total Due:</div><div>€${formatCurrency(grand)}</div></div>
+        </div>
       </div>
     </div>
 
-    <div class="section">
-      <strong>Please Pay Bill To:</strong>
-    </div>
-    <div style="white-space:pre-line; margin-top:5px;">
-      ${escapeHtml(document.getElementById('bankDetails').value)}
+    <div class="invoice-bank mt-4 pt-3 border-t border-gray-200">
+      <div class="text-gray-700 mb-2">Please Pay Bill To:</div>
+      <div class="whitespace-pre-line text-sm p-3 bg-gray-50 rounded">
+        ${escapeHtml(document.getElementById('bankDetails').value)}
+      </div>
     </div>
   `;
 
   document.getElementById('invoiceArea').innerHTML = html;
 }
 
-document.getElementById('generateBtn').onclick = function(e){ e && e.preventDefault(); renderInvoice(); };
-document.getElementById('printBtn').onclick = function(e){ e && e.preventDefault(); renderInvoice(); window.print(); };
+// Event Listeners
+document.getElementById('generateBtn').onclick = function(e){ 
+  e && e.preventDefault(); 
+  renderInvoice(); 
+};
+
+document.getElementById('printBtn').onclick = function(e){ 
+  e && e.preventDefault(); 
+  renderInvoice(); 
+  setTimeout(() => window.print(), 100);
+};
 
 document.getElementById('downloadHtml').onclick = function(){
   const blob = new Blob([document.documentElement.outerHTML],{type:'text/html'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = 'invoice.html';
-  document.body.appendChild(a); a.click(); a.remove();
+  a.href = url; 
+  a.download = 'milk-delivery-invoice.html';
+  document.body.appendChild(a); 
+  a.click(); 
+  a.remove();
   URL.revokeObjectURL(url);
 };
 
+// Set default dates on load
 window.addEventListener('DOMContentLoaded', ()=>{
   const today = new Date();
   const fourWeeksAgo = new Date();
